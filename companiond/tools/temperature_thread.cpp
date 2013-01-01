@@ -17,19 +17,19 @@ using namespace std;
 
 struct ThermalZoneUdev {
 	ThermalZoneUdev( 	struct udev *udev, const char *path )
-		: _udev( udev_ref(udev) ),_path(path), _name("")
+		: _udev( udev ), _path(path), _name("")
 	{
 	}
 
 	~ThermalZoneUdev()
 		{
- 			udev_unref( _udev );
+ //			udev_unref( _udev );
 		}
 
 	void setName( void )
 	{
 		struct udev_device *dev;
-		udev_device_new_from_syspath( _udev, _name.c_str() );
+		dev = udev_device_new_from_syspath( _udev, _path.c_str() );
 		_name = udev_device_get_sysattr_value(dev,"name");
 
 		udev_device_unref( dev );
@@ -40,15 +40,16 @@ struct ThermalZoneUdev {
 
 	float temperature( void ) {
 		struct udev_device *dev;
-		dev = udev_device_new_from_syspath( _udev, _name.c_str() );
+		dev = udev_device_new_from_syspath( _udev, _path.c_str() );
 
 		// get_sysattr_value caches.  Need to create new udev every time.
 		const char *t = udev_device_get_sysattr_value( dev,"temp");
 		if( !t ) return -1;
 
+		float a = atof(t)/1000.0;
 		udev_device_unref( dev );
 
-		return atof(t)/1000.0;
+		return a;
 	}
 
 	struct udev *_udev;
@@ -107,9 +108,11 @@ void temperatureThread( void )
 
 	// Only thermal devices have temp
 	if( !udev_device_get_sysattr_value(dev, "temp") ) {
-		udev_device_unref(dev);
+//		udev_device_unref(dev);
 		continue;
 	}
+
+udev_device_unref( dev );
 
 	zones.emplace_back( udev, path );
 
