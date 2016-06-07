@@ -44,6 +44,12 @@ using namespace std;
 #define I2C_SMBUS_QUICK         0
 #define I2C_SMBUS_BYTE          1
 #define I2C_SMBUS_BYTE_DATA     2
+#define I2C_SMBUS_WORD_DATA     3
+#define I2C_SMBUS_PROC_CALL     4
+#define I2C_SMBUS_BLOCK_DATA        5
+#define I2C_SMBUS_I2C_BLOCK_BROKEN  6
+#define I2C_SMBUS_BLOCK_PROC_CALL   7       /* SMBus 2.0 */
+#define I2C_SMBUS_I2C_BLOCK_DATA    8
 
 #define I2C_SMBUS_BLOCK_MAX 32
 union i2c_smbus_data {
@@ -96,10 +102,39 @@ static inline uint8_t i2c_write_byte_data(int file, __u8 command, __u8 value)
 		I2C_SMBUS_BYTE_DATA, &data);
 }
 
+static inline __s32 i2c_read_word_data(int file, __u8 command)
+{
+	union i2c_smbus_data data;
+	if (i2c_access(file,I2C_SMBUS_READ,command,
+	                    I2C_SMBUS_WORD_DATA,&data))
+	   return -1;
+	else
+	   return 0x0FFFF & data.word;
+}
+
+static inline __s32 i2c_read_i2c_block_data(int file, __u8 command,
+                                                    __u8 length, __u8 *values)
+{
+	union i2c_smbus_data data;
+	int i;
+
+	if (length > 32)
+	    length = 32;
+	data.block[0] = length;
+	if (i2c_access(file,I2C_SMBUS_READ,command,
+	                     length == 32 ? I2C_SMBUS_I2C_BLOCK_BROKEN :
+	                      I2C_SMBUS_I2C_BLOCK_DATA,&data))
+	    return -1;
+	else {
+	    for (i = 1; i <= data.block[0]; i++)
+	        values[i-1] = data.block[i];
+	    return data.block[0];
+	}
+}
+
 /***************************************************************************
  PRIVATE FUNCTIONS
  ***************************************************************************/
-
 
 Adafruit_BMP280::Adafruit_BMP280( int fd, uint8_t addr )
   : _fd( fd ), _i2caddr( addr )
@@ -109,8 +144,8 @@ bool Adafruit_BMP280::initialize()
 {
 	set_slave_addr( _fd, BMP280_ADDRESS );
 	uint8_t chipid = i2c_read_byte_data( _fd, BMP280_REGISTER_CHIPID );
-	cout << "Read chipid " << ios::hex << int(chipid) << endl;
-  if ( chipid != 0x58)
+	cout << "Read chipid " << ios::hex << chipid << endl;
+  if ( chipid != 0x58 )
     return false;
 
   readCoefficients();
@@ -121,64 +156,17 @@ bool Adafruit_BMP280::initialize()
 
 /**************************************************************************/
 /*!
-    @brief  Writes an 8 bit value over I2C/SPI
-*/
-/**************************************************************************/
-void Adafruit_BMP280::write8(uint8_t reg, uint8_t value)
-{
- i2c_write_byte_data( _fd, reg, value );
-
-	// uint8_t buf[2] = {reg, value};
-	// if (ioctl(_fd, I2C_SLAVE, _i2caddr) < 0) {
-  //   cerr << "Failed to acquire bus access and/or talk to slave." << endl;
-  //   /* ERROR HANDLING; you can check errno to see what went wrong */
-	// }
-	//
-	// if (write(_fd,buf,2) != 1) {
-	// 	cerr << "Unable to write buffer" << endl;
-	// }
-}
-
-/**************************************************************************/
-/*!
-    @brief  Reads an 8 bit value over I2C
-*/
-/**************************************************************************/
-
-uint8_t Adafruit_BMP280::read8(uint8_t reg)
-{
-return i2c_read_byte_data( _fd, reg );
-}
-
-/**************************************************************************/
-/*!
     @brief  Reads a 16 bit value over I2C
 */
 /**************************************************************************/
 uint16_t Adafruit_BMP280::read16(uint8_t reg)
 {
-  uint16_t value;
-
-	if (ioctl(_fd, I2C_SLAVE, _i2caddr) < 0) {
-    cerr << "Failed to acquire bus access and/or talk to slave." << endl;
-    /* ERROR HANDLING; you can check errno to see what went wrong */
-	}
-
-	if ( write(_fd, (void *)reg,1) != 1) {
-		cerr << "Unable to read from buffer" << endl;
-	}
-
-		// Watch for MSB/LSB problems here
-	if( read( _fd, (void *)value, 2 ) != 1 ) {
-		cerr << "Unable to read from buffer." << endl;
-	}
-
-  return value;
+	return i2c_read_word_data( _fd, reg );
 }
 
 uint16_t Adafruit_BMP280::read16_LE(uint8_t reg) {
-  uint16_t temp = read16(reg);
-  return (temp >> 8) | (temp << 8);
+	uint16_t temp = read16(reg);
+	return (temp >> 8) | (temp << 8);
 
 }
 
@@ -202,30 +190,18 @@ int16_t Adafruit_BMP280::readS16_LE(uint8_t reg)
 
 /**************************************************************************/
 /*!
-    @brief  Reads a signed 16 bit value over I2C
+    @brief
 */
 /**************************************************************************/
 
 uint32_t Adafruit_BMP280::read24(uint8_t reg)
 {
-	uint8_t b;
-  uint8_t in[3] = {0,0,0};
-
-	if (ioctl(_fd, I2C_SLAVE, _i2caddr) < 0) {
-    cerr << "Failed to acquire bus access and/or talk to slave.";
-    /* ERROR HANDLING; you can check errno to see what went wrong */
+	uint8_t values[3] = {0,0,0};
+	if( i2c_read_i2c_block_data( _fd, reg, 3, values ) < 0 ) {
+		return 0;
 	}
 
-	if (write( _fd, (void *)reg, 1) != 1) {
-		cerr << "Unable to read from buffer" << endl;
-	}
-
-	// watch for byte ordering problems here
-	if( read( _fd, (void *)in, 3 ) != 1 ) {
-		cerr << "Unable to read from buffer." << endl;
-	}
-
-  return in[2] << 16 | in[1] << 8 | in[0];
+	return values[0] << 16 | values[1] << 8 | values[2];
 }
 
 /**************************************************************************/
