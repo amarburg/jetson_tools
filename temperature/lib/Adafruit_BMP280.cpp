@@ -144,7 +144,7 @@ bool Adafruit_BMP280::initialize()
 {
 	set_slave_addr( _fd, BMP280_ADDRESS );
 	uint8_t chipid = i2c_read_byte_data( _fd, BMP280_REGISTER_CHIPID );
-	cout << "Read chipid: " << std::hex << chipid << std::dec << "(" << int(chipid) << ")" << endl;
+	cout << "Read chipid: " << std::hex << int(chipid) << std::dec << "(" << int(chipid) << ")" << endl;
   if ( chipid != 0x58 )
     return false;
 
@@ -166,7 +166,7 @@ uint16_t Adafruit_BMP280::read16(uint8_t reg)
 
 uint16_t Adafruit_BMP280::read16_LE(uint8_t reg) {
 	uint16_t temp = read16(reg);
-	return (temp >> 8) | (temp << 8);
+	return temp;  //(temp >> 8) | (temp << 8);
 
 }
 
