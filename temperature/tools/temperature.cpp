@@ -39,7 +39,7 @@ struct ThermalZoneUdev {
 		: _dev( d ) {;}
 
 	~ThermalZoneUdev()
-		{ udev_device_unref(_dev); }
+		{ }//udev_device_unref(_dev); }
 
 	const char *name( void ) { return udev_device_get_sysattr_value(_dev,"type"); }
 	float temperature( void ) {
@@ -132,6 +132,8 @@ void readTemperature( void )
 			std::this_thread::sleep_until( now + std::chrono::seconds(1) );
 
 	}
+
+	for( auto &zone : zones ) { udev_device_unref( zone._dev ); }
 
 	udev_unref(udev);
 }
