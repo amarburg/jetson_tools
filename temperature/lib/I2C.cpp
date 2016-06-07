@@ -58,6 +58,14 @@ static inline __s32 i2c_access(int file, char read_write, uint8_t command,
       return ioctl(file,I2C_SMBUS,&args);
   }
 
+uint8_t i2c_write_byte(int file, uint8_t value)
+{
+	union i2c_smbus_data data;
+	data.byte = value;
+	return i2c_access(file,I2C_SMBUS_WRITE, value,
+		I2C_SMBUS_BYTE, NULL);
+}
+
 uint8_t i2c_read_byte_data(int file, uint8_t command)
 {
 	union i2c_smbus_data data;

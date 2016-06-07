@@ -83,9 +83,10 @@ void readTemperature( void )
 		}
 
 		enumerate = udev_enumerate_new(udev);
-			udev_enumerate_add_match_subsystem(enumerate, "thermal");
-			udev_enumerate_scan_devices(enumerate);
-			devices = udev_enumerate_get_list_entry(enumerate);
+		udev_enumerate_add_match_subsystem(enumerate, "thermal");
+		udev_enumerate_scan_devices(enumerate);
+		devices = udev_enumerate_get_list_entry(enumerate);
+
 			/* For each item enumerated, print out its information.
 			   udev_list_entry_foreach is a macro which expands to
 			   a loop. The loop will be executed for each member in
