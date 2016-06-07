@@ -1,6 +1,7 @@
 
 #include <string>
 #include <iostream>
+#include <vector>
 
 #include <signal.h>
 #include <stdio.h>
@@ -33,6 +34,25 @@ void sighandler( int sig )
 }
 
 
+struct ThermalZoneUdev {
+	ThermalZoneUdev( struct udev_device *d )
+		: _dev( d ) {;}
+
+	~ThermalZoneUdev()
+		{ udev_device_unref(_dev); }
+
+	const char *name( void ) { return udev_device_get_sysattr_value(_dev,"type"); }
+	float temperature( void ) {
+		const char *t = udev_device_get_sysattr_value(_dev,"temp");
+		if( !t ) return -1;
+
+		return atof(t)/1000.0;
+	}
+
+	struct udev_device *_dev;
+};
+
+
 void readTemperature( void )
 {
 	Adafruit_BMP280 bmp280( _fd );
@@ -44,6 +64,8 @@ void readTemperature( void )
 			return;
 		}
 	}
+
+	vector< struct ThermalZoneUdev > zones;
 
 	// And initialize libudev
 	struct udev *udev;
@@ -84,11 +106,14 @@ void readTemperature( void )
 				continue;
 			}
 
-				printf("  type/temp: %s %s\n",
-						        udev_device_get_sysattr_value(dev,"type"),
-						        udev_device_get_sysattr_value(dev, "temp"));
+			zones.emplace_back( dev );
+
+				// printf("  type/temp: %s %s\n",
+				// 		        udev_device_get_sysattr_value(dev,"type"),
+				// 		        udev_device_get_sysattr_value(dev, "temp"));
 
 	}
+	udev_enumerate_unref(enumerate);
 
 	while( !_stopping )
 	{
@@ -100,10 +125,13 @@ void readTemperature( void )
 				cout << "Pressure is " << bmp280.pressure() << endl;
 			}
 
-			std::this_thread::sleep_until( now + std::chrono::seconds(1) );
-	}
+			for( auto &zone : zones ) {
+				cout << zone.name() << ": " << zone.temperature() << endl;
+			}
 
-	udev_enumerate_unref(enumerate);
+			std::this_thread::sleep_until( now + std::chrono::seconds(1) );
+
+	}
 
 	udev_unref(udev);
 }
