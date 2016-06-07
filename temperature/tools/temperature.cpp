@@ -132,9 +132,9 @@ void readTemperature( void )
 
 			for( auto &zone : zones ) {
 				//cout << zone.name() << ": " << zone.temperature() << endl;
-				cout << "," << zone.temperature();
+				cout << "\t" << zone.temperature();
 			}
-			cout << "," << bmp280.temperature() << "," << bmp280.pressure() << endl;
+			cout << "\t" << bmp280.temperature() << "\t" << bmp280.pressure() << endl;
 
 			std::this_thread::sleep_until( now + std::chrono::seconds(1) );
 
