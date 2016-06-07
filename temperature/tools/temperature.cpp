@@ -66,8 +66,7 @@ int main( int argc, char **argv )
 	signal( SIGHUP, sighandler );
 
 
-	int fd= -1;
-	if ((fd = open(i2c_filename.c_str(), O_RDWR)) < 0) {
+	if ((_fd = open(i2c_filename.c_str(), O_RDWR)) < 0) {
 	    /* ERROR HANDLING: you can check errno to see what went wrong */
 	    cerr << "Failed to open the i2c bus" << i2c_filename;
 	    exit(1);
@@ -82,5 +81,5 @@ int main( int argc, char **argv )
 
 	tempThread.join();
 
-	if( fd > 0 ) close( fd );
+	if( _fd > 0 ) close( _fd );
 }
