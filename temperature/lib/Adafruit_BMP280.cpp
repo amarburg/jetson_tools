@@ -33,6 +33,25 @@ using std::endl;
 
 #include "Adafruit_BMP280.h"
 
+//== From i2ctools
+/* smbus_access read or write markers */
+#define I2C_SMBUS_READ  1
+#define I2C_SMBUS_WRITE 0
+
+/* SMBus transaction types (size parameter in the above functions)
+101    Note: these no longer correspond to the (arbitrary) PIIX4 internal codes! */
+#define I2C_SMBUS_QUICK         0
+#define I2C_SMBUS_BYTE          1
+#define I2C_SMBUS_BYTE_DATA     2
+
+#define I2C_SMBUS_BLOCK_MAX 32
+union i2c_smbus_data {
+	__u8 byte;
+	__u16 word;
+	__u8 block[I2C_SMBUS_BLOCK_MAX + 2]; /* block[0] is used for length */
+	                                            /* and one more for PEC */
+};
+
 
 /***************************************************************************
  PRIVATE FUNCTIONS
@@ -53,6 +72,37 @@ bool Adafruit_BMP280::initialize()
   return true;
 }
 
+static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command,
+                                       int size, union i2c_smbus_data *data)
+  {
+      struct i2c_smbus_ioctl_data args;
+
+      args.read_write = read_write;
+      args.command = command;
+      args.size = size;
+      args.data = data;
+      return ioctl(file,I2C_SMBUS,&args);
+  }
+
+	static inline __s32 i2c_smbus_read_byte_data(int file, __u8 command)
+	{
+		union i2c_smbus_data data;
+		if (i2c_smbus_access(file,I2C_SMBUS_READ,command,
+			I2C_SMBUS_BYTE_DATA,&data))
+			return -1;
+			else
+			return 0x0FF & data.byte;
+		}
+
+		static inline __s32 i2c_smbus_write_byte_data(int file, __u8 command,
+			__u8 value)
+			{
+				union i2c_smbus_data data;
+				data.byte = value;
+				return i2c_smbus_access(file,I2C_SMBUS_WRITE,command,
+					I2C_SMBUS_BYTE_DATA, &data);
+				}
+
 /**************************************************************************/
 /*!
     @brief  Writes an 8 bit value over I2C/SPI
@@ -60,15 +110,17 @@ bool Adafruit_BMP280::initialize()
 /**************************************************************************/
 void Adafruit_BMP280::write8(uint8_t reg, uint8_t value)
 {
-	uint8_t buf[2] = {reg, value};
-	if (ioctl(_fd, I2C_SLAVE, _i2caddr) < 0) {
-    cerr << "Failed to acquire bus access and/or talk to slave." << endl;
-    /* ERROR HANDLING; you can check errno to see what went wrong */
-	}
+ i2c_smbus_write_byte_data( _fd, reg, value );
 
-	if (write(_fd,buf,2) != 1) {
-		cerr << "Unable to write buffer" << endl;
-	}
+	// uint8_t buf[2] = {reg, value};
+	// if (ioctl(_fd, I2C_SLAVE, _i2caddr) < 0) {
+  //   cerr << "Failed to acquire bus access and/or talk to slave." << endl;
+  //   /* ERROR HANDLING; you can check errno to see what went wrong */
+	// }
+	//
+	// if (write(_fd,buf,2) != 1) {
+	// 	cerr << "Unable to write buffer" << endl;
+	// }
 }
 
 /**************************************************************************/
@@ -76,21 +128,10 @@ void Adafruit_BMP280::write8(uint8_t reg, uint8_t value)
     @brief  Reads an 8 bit value over I2C
 */
 /**************************************************************************/
+
 uint8_t Adafruit_BMP280::read8(uint8_t reg)
 {
-	if (ioctl(_fd, I2C_SLAVE, _i2caddr) < 0) {
-    cerr << "Failed to acquire bus access and/or talk to slave." << endl;
-    /* ERROR HANDLING; you can check errno to see what went wrong */
-	}
-
-	if (write(_fd,(void *)reg,1) != 1) {
-		cerr << "Unable to read from buffer" << endl;
-	}
-
-  uint8_t value;
-	if( read( _fd, (void *)value, 1 ) != 1 ) {
-		cerr << "Unable to read from buffer." << endl;
-	}
+return i2c_smbus_read_byte_data( _fd, reg ) & 0xFF;
 }
 
 /**************************************************************************/
