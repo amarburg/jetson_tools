@@ -224,6 +224,10 @@ void Adafruit_BMP280::readCoefficients(void)
     _bmp280_calib.dig_P7 = readS16_LE(BMP280_REGISTER_DIG_P7);
     _bmp280_calib.dig_P8 = readS16_LE(BMP280_REGISTER_DIG_P8);
     _bmp280_calib.dig_P9 = readS16_LE(BMP280_REGISTER_DIG_P9);
+
+		cout << "dig_T1: " << _bmp280_calib.dig_T1 << endl;
+		cout << "dig_T2: " << _bmp280_calib.dig_T2 << endl;
+		cout << "dig_T3: " << _bmp280_calib.dig_T3 << endl;
 }
 
 /**************************************************************************/
@@ -236,6 +240,9 @@ float Adafruit_BMP280::readTemperature(void)
   int32_t var1, var2;
 
   int32_t adc_T = read24(BMP280_REGISTER_TEMPDATA);
+
+	cout << "adc_T: " << adc_T << endl;
+
   adc_T >>= 4;
 
   var1  = ((((adc_T>>3) - ((int32_t)_bmp280_calib.dig_T1 <<1))) *
@@ -245,10 +252,8 @@ float Adafruit_BMP280::readTemperature(void)
 	     ((adc_T>>4) - ((int32_t)_bmp280_calib.dig_T1))) >> 12) *
 	   ((int32_t)_bmp280_calib.dig_T3)) >> 14;
 
-  t_fine = var1 + var2;
-
-  float T  = (t_fine * 5 + 128) >> 8;
-  return T/100;
+  _t_fine = var1 + var2;
+  _temperature = ( (_t_fine * 5 + 128) >> 8 ) / 100;
 }
 
 /**************************************************************************/
@@ -256,16 +261,20 @@ float Adafruit_BMP280::readTemperature(void)
 
 */
 /**************************************************************************/
-float Adafruit_BMP280::readPressure(void) {
+void Adafruit_BMP280::read(void) {
   int64_t var1, var2, p;
+
+	_pressure = _temperature = 0.0;
 
   // Must be done first to get the t_fine variable set up
   readTemperature();
 
   int32_t adc_P = read24(BMP280_REGISTER_PRESSUREDATA);
+	cout << "adc_p: " << adc_P << endl;
+
   adc_P >>= 4;
 
-  var1 = ((int64_t)t_fine) - 128000;
+  var1 = ((int64_t)_t_fine) - 128000;
   var2 = var1 * var1 * (int64_t)_bmp280_calib.dig_P6;
   var2 = var2 + ((var1*(int64_t)_bmp280_calib.dig_P5)<<17);
   var2 = var2 + (((int64_t)_bmp280_calib.dig_P4)<<35);
@@ -274,7 +283,7 @@ float Adafruit_BMP280::readPressure(void) {
   var1 = (((((int64_t)1)<<47)+var1))*((int64_t)_bmp280_calib.dig_P1)>>33;
 
   if (var1 == 0) {
-    return 0;  // avoid exception caused by division by zero
+    return;  // avoid exception caused by division by zero
   }
   p = 1048576 - adc_P;
   p = (((p<<31) - var2)*3125) / var1;
@@ -282,14 +291,13 @@ float Adafruit_BMP280::readPressure(void) {
   var2 = (((int64_t)_bmp280_calib.dig_P8) * p) >> 19;
 
   p = ((p + var1 + var2) >> 8) + (((int64_t)_bmp280_calib.dig_P7)<<4);
-  return (float)p/256;
+  _pressure = (float)p/256;
 }
 
 float Adafruit_BMP280::readAltitude(float seaLevelhPa) {
   float altitude;
 
-  float pressure = readPressure(); // in Si units for Pascal
-  pressure /= 100;
+  float pressure = _pressure/100; // Convert to Pa
 
   altitude = 44330 * (1.0 - pow(pressure / seaLevelhPa, 0.1903));
 

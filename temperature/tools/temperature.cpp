@@ -34,11 +34,9 @@ int main( int argc, char **argv )
 		exit(1);
 	}
 
-	float t = bmp280.readTemperature();
-	cout << "Temperature is " << t << endl;
-
-	float p = bmp280.readPressure();
-	cout << "Pressure is " << p << endl;
+	bmp280.read();
+	cout << "Temperature is " << bmp280.temperature() << endl;
+	cout << "Pressure is " << bmp280.pressure() << endl;
 
 
 	if( fd > 0 ) close( fd );

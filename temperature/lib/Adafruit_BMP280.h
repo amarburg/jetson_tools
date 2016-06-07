@@ -131,8 +131,15 @@ class Adafruit_BMP280
     Adafruit_BMP280( int fd, uint8_t addr = BMP280_ADDRESS );
 
     bool  initialize();
-    float readTemperature(void);
-    float readPressure(void);
+
+    void read(void);
+
+		// Reads temperature in degrees C
+		float temperature( void ) const { return _temperature; }
+
+		// Reads pressure in hPa (expect ~1000 +/- 50)
+		float pressure( void ) const { return _pressure; }
+
     float readAltitude(float seaLevelhPa = 1013.25);
 
   private:
@@ -149,7 +156,11 @@ class Adafruit_BMP280
 
     uint8_t   _i2caddr;
     int32_t   _sensorID;
-    int32_t t_fine;
+    int32_t _t_fine;
+
+		float readTemperature(void);
+
+		float _temperature, _pressure;
 
 		int _fd;
 
