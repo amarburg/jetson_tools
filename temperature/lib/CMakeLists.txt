@@ -8,6 +8,6 @@ include_directories(
 add_library(libcompanion  SHARED
 			Adafruit_BMP280.cpp
  			I2C.cpp )
-# target_link_libraries(active_object
-#   ${Boost_LIBRARIES}
-# )
+target_link_libraries(libcompanion
+	pthread
+)
