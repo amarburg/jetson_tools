@@ -126,14 +126,15 @@ void readTemperature( void )
 				//cout << "Temperature is " << bmp280.temperature() << endl;
 				//cout << "Pressure is " << bmp280.pressure() << endl;
 			}
-			cout << std::chrono::duration_cast<std::chrono::hours>(
-                   now.time_since_epoch()).count() << "," << bmp280.temperature() << "," << bmp280.pressure();
+
+			std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+			cout << now_c;
 
 			for( auto &zone : zones ) {
 				//cout << zone.name() << ": " << zone.temperature() << endl;
 				cout << "," << zone.temperature();
 			}
-			cout << endl;
+			cout << "," << bmp280.temperature() << "," << bmp280.pressure() << endl;
 
 			std::this_thread::sleep_until( now + std::chrono::seconds(1) );
 
