@@ -10,4 +10,5 @@ add_library(libcompanion  SHARED
  			I2C.cpp )
 target_link_libraries(libcompanion
 	pthread
+	udev
 )
