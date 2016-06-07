@@ -123,13 +123,17 @@ void readTemperature( void )
 			{
 				LockGuard guard( _mutex );
 				bmp280.read();
-				cout << "Temperature is " << bmp280.temperature() << endl;
-				cout << "Pressure is " << bmp280.pressure() << endl;
+				//cout << "Temperature is " << bmp280.temperature() << endl;
+				//cout << "Pressure is " << bmp280.pressure() << endl;
 			}
+			cout << std::chrono::duration_cast<std::chrono::hours>(
+                   now.time_since_epoch()).count() << "," << bmp280.temperature() << "," << bmp280.pressure();
 
 			for( auto &zone : zones ) {
-				cout << zone.name() << ": " << zone.temperature() << endl;
+				//cout << zone.name() << ": " << zone.temperature() << endl;
+				cout << "," << zone.temperature();
 			}
+			cout << endl;
 
 			std::this_thread::sleep_until( now + std::chrono::seconds(1) );
 
