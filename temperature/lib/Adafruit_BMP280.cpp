@@ -144,7 +144,7 @@ bool Adafruit_BMP280::initialize()
 {
 	set_slave_addr( _fd, BMP280_ADDRESS );
 	uint8_t chipid = i2c_read_byte_data( _fd, BMP280_REGISTER_CHIPID );
-	cout << "Read chipid " << ios::hex << chipid << endl;
+	cout << "Read chipid: " << std::hex << chipid << endl;
   if ( chipid != 0x58 )
     return false;
 
@@ -241,9 +241,8 @@ float Adafruit_BMP280::readTemperature(void)
 
   int32_t adc_T = read24(BMP280_REGISTER_TEMPDATA);
 
-	cout << "adc_T: " << adc_T << endl;
-
   adc_T >>= 4;
+	cout << "adc_T: " << adc_T << endl;
 
   var1  = ((((adc_T>>3) - ((int32_t)_bmp280_calib.dig_T1 <<1))) *
 	   ((int32_t)_bmp280_calib.dig_T2)) >> 11;
@@ -270,9 +269,9 @@ void Adafruit_BMP280::read(void) {
   readTemperature();
 
   int32_t adc_P = read24(BMP280_REGISTER_PRESSUREDATA);
-	cout << "adc_p: " << adc_P << endl;
-
   adc_P >>= 4;
+
+	cout << "adc_p: " << adc_P << endl;
 
   var1 = ((int64_t)_t_fine) - 128000;
   var2 = var1 * var1 * (int64_t)_bmp280_calib.dig_P6;
