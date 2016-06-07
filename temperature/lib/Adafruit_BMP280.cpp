@@ -165,9 +165,7 @@ uint16_t Adafruit_BMP280::read16(uint8_t reg)
 }
 
 uint16_t Adafruit_BMP280::read16_LE(uint8_t reg) {
-	uint16_t temp = read16(reg);
-	return temp;  //(temp >> 8) | (temp << 8);
-
+	return read16(reg);
 }
 
 /**************************************************************************/
@@ -211,6 +209,8 @@ uint32_t Adafruit_BMP280::read24(uint8_t reg)
 /**************************************************************************/
 void Adafruit_BMP280::readCoefficients(void)
 {
+		// Interestingly, the calibration data is stored as little-endian words,
+		// while the T and P data is big-endian 20-bits (in a 24bits of register)
     _bmp280_calib.dig_T1 = read16_LE(BMP280_REGISTER_DIG_T1);
     _bmp280_calib.dig_T2 = readS16_LE(BMP280_REGISTER_DIG_T2);
     _bmp280_calib.dig_T3 = readS16_LE(BMP280_REGISTER_DIG_T3);
@@ -224,10 +224,6 @@ void Adafruit_BMP280::readCoefficients(void)
     _bmp280_calib.dig_P7 = readS16_LE(BMP280_REGISTER_DIG_P7);
     _bmp280_calib.dig_P8 = readS16_LE(BMP280_REGISTER_DIG_P8);
     _bmp280_calib.dig_P9 = readS16_LE(BMP280_REGISTER_DIG_P9);
-
-		cout << "dig_T1: " << _bmp280_calib.dig_T1 << endl;
-		cout << "dig_T2: " << _bmp280_calib.dig_T2 << endl;
-		cout << "dig_T3: " << _bmp280_calib.dig_T3 << endl;
 }
 
 /**************************************************************************/
@@ -242,7 +238,7 @@ float Adafruit_BMP280::readTemperature(void)
   int32_t adc_T = read24(BMP280_REGISTER_TEMPDATA);
 
   adc_T >>= 4;
-	cout << "adc_T: " << adc_T << endl;
+	// cout << "adc_T: " << adc_T << endl;
 
   var1  = ((((adc_T>>3) - ((int32_t)_bmp280_calib.dig_T1 <<1))) *
 	   ((int32_t)_bmp280_calib.dig_T2)) >> 11;
@@ -271,7 +267,7 @@ void Adafruit_BMP280::read(void) {
   int32_t adc_P = read24(BMP280_REGISTER_PRESSUREDATA);
   adc_P >>= 4;
 
-	cout << "adc_p: " << adc_P << endl;
+	// cout << "adc_p: " << adc_P << endl;
 
   var1 = ((int64_t)_t_fine) - 128000;
   var2 = var1 * var1 * (int64_t)_bmp280_calib.dig_P6;
