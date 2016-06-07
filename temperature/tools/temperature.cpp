@@ -14,6 +14,8 @@
 
 using namespace std;
 
+
+
 int main( int argc, char **argv )
 {
 	const string i2c_filename = "/dev/i2c-0";
@@ -25,7 +27,7 @@ int main( int argc, char **argv )
 	    exit(1);
 	}
 
-Adafruit_BMP280 bmp280( fd );
+	Adafruit_BMP280 bmp280( fd );
 
 	if( ! bmp280.initialize() ) {
 		cerr << "Couldn't initiaize BMP280" << endl;

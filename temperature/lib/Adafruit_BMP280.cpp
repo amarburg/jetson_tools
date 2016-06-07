@@ -23,6 +23,8 @@
 
 #include <unistd.h>
 #include <math.h>
+#include <errno.h>
+#include <string.h>
 
 #include <iostream>
 using namespace std;
@@ -50,6 +52,20 @@ union i2c_smbus_data {
 	__u8 block[I2C_SMBUS_BLOCK_MAX + 2]; /* block[0] is used for length */
 	                                            /* and one more for PEC */
 };
+
+static int set_slave_addr(int file, int address )
+{
+	int force = 0;
+
+	/* With force, let the user read from/write to the registers
+	  even when a driver is also running */
+	if (ioctl(file, force ? I2C_SLAVE_FORCE : I2C_SLAVE, address) < 0) {
+	   cerr << "Error: Could not set address: " << strerror(errno) << endl;
+	   return -errno;
+	}
+
+	return 0;
+}
 
 static inline __s32 i2c_access(int file, char read_write, __u8 command,
                                        int size, union i2c_smbus_data *data)
@@ -91,6 +107,7 @@ Adafruit_BMP280::Adafruit_BMP280( int fd, uint8_t addr )
 
 bool Adafruit_BMP280::initialize()
 {
+	set_slave_addr( _fd, BMP280_ADDRESS );
 	uint8_t chipid = i2c_read_byte_data( _fd, BMP280_REGISTER_CHIPID );
 	cout << "Read chipid " << ios::hex << int(chipid) << endl;
   if ( chipid != 0x58)
