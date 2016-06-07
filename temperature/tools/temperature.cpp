@@ -76,11 +76,18 @@ void readTemperature( void )
 
 				/* usb_device_get_devnode() returns the path to the device node
 				   itself in /dev. */
-				printf("Device Node Path: %s\n", udev_device_get_devnode(dev));
+				//printf("Device Node Path: %s\n", udev_device_get_devnode(dev));
+
+			// Only thermal devices have temp
+			if( !udev_device_get_sysattr_value(dev, "temp") ) {
+				udev_device_unref(dev);
+				continue;
+			}
 
 				printf("  type/temp: %s %s\n",
 						        udev_device_get_sysattr_value(dev,"type"),
 						        udev_device_get_sysattr_value(dev, "temp"));
+
 	}
 
 	while( !_stopping )
