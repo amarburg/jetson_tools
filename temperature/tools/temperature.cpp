@@ -36,12 +36,13 @@ void sighandler( int sig )
 
 struct ThermalZoneUdev {
 	ThermalZoneUdev( struct udev_device *d )
-		: _dev( d ) {;}
+		: _dev( d ), _name(udev_device_get_sysattr_value(_dev,"type"))
+	{;}
 
 	~ThermalZoneUdev()
 		{ }//udev_device_unref(_dev); }
 
-	const char *name( void ) { return udev_device_get_sysattr_value(_dev,"type"); }
+	const string &name( void ) const { return _name; }
 	float temperature( void ) {
 		const char *t = udev_device_get_sysattr_value(_dev,"temp");
 		if( !t ) return -1;
@@ -50,6 +51,7 @@ struct ThermalZoneUdev {
 	}
 
 	struct udev_device *_dev;
+	string _name;
 };
 
 
