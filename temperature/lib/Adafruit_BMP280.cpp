@@ -252,7 +252,7 @@ float Adafruit_BMP280::readTemperature(void)
 	   ((int32_t)_bmp280_calib.dig_T3)) >> 14;
 
   _t_fine = var1 + var2;
-  _temperature = ( (_t_fine * 5 + 128) >> 8 ) / 100;
+  _temperature = float( (_t_fine * 5 + 128) >> 8 ) / 100;
 }
 
 /**************************************************************************/
