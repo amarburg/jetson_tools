@@ -25,8 +25,7 @@
 #include <math.h>
 
 #include <iostream>
-using std::cerr;
-using std::endl;
+using namespace std;
 
 #include <linux/i2c-dev.h>
 #include <sys/ioctl.h>
@@ -64,7 +63,9 @@ Adafruit_BMP280::Adafruit_BMP280( int fd, uint8_t addr )
 
 bool Adafruit_BMP280::initialize()
 {
-  if (read8(BMP280_REGISTER_CHIPID) != 0x58)
+	uint8_t chipid = read8(BMP280_REGISTER_CHIPID);
+	cout << "Read chipid " << ios::hex << chipid << endl;
+  if ( chipid != 0x58)
     return false;
 
   readCoefficients();
