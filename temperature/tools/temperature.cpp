@@ -9,11 +9,45 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <mutex>
+#include <thread>
 
 #include "Adafruit_BMP280.h"
 
 using namespace std;
 
+
+int _fd;
+std::mutex _mutex;
+typedef std::lock_guard< std::mutex > LockGuard;
+
+bool _stopping;
+
+void readTemperature( void )
+{
+	Adafruit_BMP280 bmp280( _fd );
+
+	{
+		LockGuard guard( _mutex );
+		if( ! bmp280.initialize() ) {
+			cerr << "Couldn't initiaize BMP280" << endl;
+			return;
+		}
+	}
+
+	while( !_stopping )
+	{
+			std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+			{
+				LockGuard guard( _mutex );
+				bmp280.read();
+				cout << "Temperature is " << bmp280.temperature() << endl;
+				cout << "Pressure is " << bmp280.pressure() << endl;
+			}
+
+			std::this_thread::sleep_until( now + std::chrono::seconds(1) );
+	}
+}
 
 
 int main( int argc, char **argv )
@@ -27,17 +61,14 @@ int main( int argc, char **argv )
 	    exit(1);
 	}
 
-	Adafruit_BMP280 bmp280( fd );
+	std::thread tempThread( readTemperature );
 
-	if( ! bmp280.initialize() ) {
-		cerr << "Couldn't initiaize BMP280" << endl;
-		exit(1);
+	while( !_stopping ) {
+
+		std::this_thread::sleep_for( std::chrono::seconds(1) );
 	}
 
-	bmp280.read();
-	cout << "Temperature is " << bmp280.temperature() << endl;
-	cout << "Pressure is " << bmp280.pressure() << endl;
-
+	tempThread.join();
 
 	if( fd > 0 ) close( fd );
 }
