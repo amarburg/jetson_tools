@@ -64,7 +64,7 @@ Adafruit_BMP280::Adafruit_BMP280( int fd, uint8_t addr )
 bool Adafruit_BMP280::initialize()
 {
 	uint8_t chipid = read8(BMP280_REGISTER_CHIPID);
-	cout << "Read chipid " << ios::hex << chipid << endl;
+	cout << "Read chipid " << ios::hex << int(chipid) << endl;
   if ( chipid != 0x58)
     return false;
 
