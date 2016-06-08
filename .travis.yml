@@ -1,0 +1,20 @@
+language: cpp
+
+notifications:
+  email:
+    - amarburg@apl.washington.edu
+
+# Per-OS configuration
+matrix:
+  env:
+    - BUILD_TYPE=Release
+  include:
+    - os: linux
+      dist: trusty
+      sudo: required
+
+## Install OSX deps using a script
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then companiond/.travis/install_deps_trusty.sh     ; fi
+
+script: companiond/.travis/build.sh
