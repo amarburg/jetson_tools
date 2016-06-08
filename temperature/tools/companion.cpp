@@ -106,10 +106,27 @@ int main( int argc, char **argv )
 
 	while( !_stopping ) {
 
-		std::this_thread::sleep_for( std::chrono::seconds(1) );
+		//std::this_thread::sleep_for( std::chrono::seconds(1) );
+		int id = -1,  val = -1;
+		cout << "light_id, value(0-255)" << endl;
+		cin >> id >> val;
+
+		if( id <= 0  || id > _lights.size() ) {
+			cerr << "Only light IDs 1 and 2 are acepted" << endl;
+			continue;
+		} else if( val < 0 || val > 255 ) {
+				cerr << "Value should be between 0 and 255" << endl;
+				continue;
+		}
+
+		cout << "Setting light " << id << " to " << val << endl;
+			//_lights[id-1].set( val );
 	}
 
 	tempThread.join();
+
+	_lights[0].set( 0 );
+	_lights[1].set( 0 );
 
 	if( _fd > 0 ) close( _fd );
 
