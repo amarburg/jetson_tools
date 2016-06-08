@@ -99,11 +99,13 @@ void temperatureThread( void )
 	udev_enumerate_unref(enumerate);
 
 	// Write a header
-	(*_temperatureOut) << " # system_clock,";
-	for( auto &zone : zones ) {
-		(*_temperatureOut) << "\t" << zone.name();
+	if( _logFile.is_open() ) {
+		_logFile << " # system_clock,";
+		for( auto &zone : zones ) {
+			_logFile << "\t" << zone.name();
+		}
+		_logFile << "bmp280_temp\tbmp280_pressure" << endl;
 	}
-	(*_temperatureOut) << "bmp280_temp\tbmp280_pressure" << endl;
 
 
 	while( !_stopping )
@@ -117,13 +119,17 @@ void temperatureThread( void )
 			}
 
 			std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-			(*_temperatureOut) << now_c;
+			cout << now_c;
 
 			for( auto &zone : zones ) {
 				//cout << zone.name() << ": " << zone.temperature() << endl;
-				(*_temperatureOut) << "\t" << zone.temperature();
+				float t = zone.temperature();
+				cout << "\t" << t;
+				if( _logFile.is_open() ) _logFile << "\t" << t;
 			}
-			(*_temperatureOut) << "\t" << bmp280.temperature() << "\t" << bmp280.pressure() << endl;
+
+			cout << "\t" << bmp280.temperature() << "\t" << bmp280.pressure() << endl;
+			if( _logFile.is_open() ) _logFile << "\t" << bmp280.temperature() << "\t" << float(bmp280.pressure())/100 << endl;
 
 			std::this_thread::sleep_until( now + std::chrono::seconds(1) );
 

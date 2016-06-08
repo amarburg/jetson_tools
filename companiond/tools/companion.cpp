@@ -27,14 +27,15 @@ int _fd;
 std::mutex _mutex;
 typedef std::lock_guard< std::mutex > LockGuard;
 bool _stopping;
-ostream *_temperatureOut;
+ofstream _logFile;
 
 
 class CompanionConfig {
 public:
 	CompanionConfig( int argc, char **argv )
 		: _cmd( "Companion", ' ', "0.1" ),
-			_logFile("o","log-file","",false,"","", _cmd )
+			_logFile("o","log-file","",false,"","", _cmd ),
+			_noLights("d","no-lights","", _cmd, false)
 	{ parseCmdLine( argc, argv ); }
 
 	void parseCmdLine( int argc, char **argv )
@@ -51,10 +52,13 @@ public:
 
 	std::string logFile( void ) { return _logFile.getValue(); }
 	bool 				logFileSet( void ) { return _logFile.isSet(); }
+
+	bool				noLights( void ) { return _noLights.getValue(); }
 protected:
 
 	TCLAP::CmdLine _cmd;
 	TCLAP::ValueArg< string > _logFile;
+	TCLAP::SwitchArg _noLights;
 };
 
 void sighandler( int sig )
@@ -73,19 +77,13 @@ int main( int argc, char **argv )
 	std::ofstream of;
 
 	if( _conf.logFileSet() ) {
-		    of.open(_conf.logFile());
+		_logFile.open(_conf.logFile());
 
-				if( !of.is_open() ) {
-					cerr << "Couldn't open log file " << _conf.logFile() << endl;
-					exit(1);
-				}
-
-		    buf = of.rdbuf();
-		} else {
-		    buf = std::cout.rdbuf();
+		if( !_logFile.is_open() ) {
+			cerr << "Couldn't open log file " << _conf.logFile() << endl;
+			exit(1);
 		}
-
-		_temperatureOut = new ostream(buf);
+	}
 
 	const string i2c_filename = "/dev/i2c-0";
 
@@ -108,8 +106,16 @@ int main( int argc, char **argv )
 
 		//std::this_thread::sleep_for( std::chrono::seconds(1) );
 		int id = -1,  val = -1;
-		cout << "light_id, value(0-255)" << endl;
-		cin >> id >> val;
+		char buf[80];
+		cout << "light_id, value(0-255);  [q] to quit" << endl;
+		cin.getline( buf, 79 );
+
+		if( buf[0] == 'q' || buf[0] == 'Q' ) {
+			_stopping = true;
+			continue;
+		}
+
+		if( sscanf( buf, "%d %d", &id, &val ) != 2 ) continue;
 
 		if( id <= 0  || id > _lights.size() ) {
 			cerr << "Only light IDs 1 and 2 are acepted" << endl;
@@ -120,15 +126,17 @@ int main( int argc, char **argv )
 		}
 
 		cout << "Setting light " << id << " to " << val << endl;
-			//_lights[id-1].set( val );
+		if( ! _conf.noLights() ) _lights[id-1].set( val );
 	}
 
 	tempThread.join();
+
+	if( _logFile.is_open() ) _logFile.close();
 
 	_lights[0].set( 0 );
 	_lights[1].set( 0 );
 
 	if( _fd > 0 ) close( _fd );
 
-	delete _temperatureOut;
+	exit(0);
 }

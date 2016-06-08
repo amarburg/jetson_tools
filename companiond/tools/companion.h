@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ostream>
+#include <fstream>
 #include <mutex>
 
 #include <LightPWM.h>
@@ -11,7 +11,7 @@ extern int _fd;
 extern std::mutex _mutex;
 extern bool _stopping;
 
-extern std::ostream *_temperatureOut;
+extern std::ofstream _logFile;
 
 
 void temperatureThread( void );
