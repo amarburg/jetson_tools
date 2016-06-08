@@ -120,6 +120,7 @@ void temperatureThread( void )
 
 			std::time_t now_c = std::chrono::system_clock::to_time_t(now);
 			cout << now_c;
+			if( _logFile.is_open() ) _logFile << now_c;
 
 			for( auto &zone : zones ) {
 				//cout << zone.name() << ": " << zone.temperature() << endl;
@@ -128,8 +129,8 @@ void temperatureThread( void )
 				if( _logFile.is_open() ) _logFile << "\t" << t;
 			}
 
-			cout << "\t" << bmp280.temperature() << "\t" << bmp280.pressure() << endl;
-			if( _logFile.is_open() ) _logFile << "\t" << bmp280.temperature() << "\t" << float(bmp280.pressure())/100 << endl;
+			cout << "\t" << bmp280.temperature() << "\t" << float(bmp280.pressure())/100.0 << endl;
+			if( _logFile.is_open() ) _logFile << "\t" << bmp280.temperature() << "\t" << bmp280.pressure() << endl;
 
 			std::this_thread::sleep_until( now + std::chrono::seconds(1) );
 
