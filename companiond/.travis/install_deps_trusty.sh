@@ -2,4 +2,4 @@
 set -ev
 
 sudo apt-get update
-sudo apt-get install -y cmake i2ctools 
+sudo apt-get install -y cmake libudev-dev libtclap-dev 
