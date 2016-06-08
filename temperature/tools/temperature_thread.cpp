@@ -1,38 +1,16 @@
 
-#include <string>
-#include <iostream>
-#include <vector>
+#include "companion.h"
 
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include <string>
+#include <vector>
+#include <iostream>
+#include <thread>
 
 #include <libudev.h>
-
-#include <mutex>
-#include <thread>
 
 #include "Adafruit_BMP280.h"
 
 using namespace std;
-
-
-int _fd;
-std::mutex _mutex;
-typedef std::lock_guard< std::mutex > LockGuard;
-bool _stopping;
-
-
-void sighandler( int sig )
-{
-	if( sig == SIGHUP || sig == SIGINT )
-		_stopping = true;
-}
-
 
 struct ThermalZoneUdev {
 	ThermalZoneUdev( struct udev_device *d )
@@ -42,7 +20,9 @@ struct ThermalZoneUdev {
 	~ThermalZoneUdev()
 		{ }//udev_device_unref(_dev); }
 
-	const string &name( void ) const { return _name; }
+	const string &name( void ) const
+	{ return _name; }
+
 	float temperature( void ) {
 		const char *t = udev_device_get_sysattr_value(_dev,"temp");
 		if( !t ) return -1;
@@ -55,7 +35,7 @@ struct ThermalZoneUdev {
 };
 
 
-void readTemperature( void )
+void temperatureThread( void )
 {
 	Adafruit_BMP280 bmp280( _fd );
 
@@ -118,6 +98,14 @@ void readTemperature( void )
 	}
 	udev_enumerate_unref(enumerate);
 
+	// Write a header
+	(*_temperatureOut) << " # system_clock,";
+	for( auto &zone : zones ) {
+		(*_temperatureOut) << "\t" << zone.name();
+	}
+	(*_temperatureOut) << "bmp280_temp\tbmp280_pressure" << endl;
+
+
 	while( !_stopping )
 	{
 			std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
@@ -129,13 +117,13 @@ void readTemperature( void )
 			}
 
 			std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-			cout << now_c;
+			(*_temperatureOut) << now_c;
 
 			for( auto &zone : zones ) {
 				//cout << zone.name() << ": " << zone.temperature() << endl;
-				cout << "\t" << zone.temperature();
+				(*_temperatureOut) << "\t" << zone.temperature();
 			}
-			cout << "\t" << bmp280.temperature() << "\t" << bmp280.pressure() << endl;
+			(*_temperatureOut) << "\t" << bmp280.temperature() << "\t" << bmp280.pressure() << endl;
 
 			std::this_thread::sleep_until( now + std::chrono::seconds(1) );
 
@@ -144,31 +132,4 @@ void readTemperature( void )
 	for( auto &zone : zones ) { udev_device_unref( zone._dev ); }
 
 	udev_unref(udev);
-}
-
-
-int main( int argc, char **argv )
-{
-	const string i2c_filename = "/dev/i2c-0";
-
-	signal( SIGINT, sighandler );
-	signal( SIGHUP, sighandler );
-
-
-	if ((_fd = open(i2c_filename.c_str(), O_RDWR)) < 0) {
-	    /* ERROR HANDLING: you can check errno to see what went wrong */
-	    cerr << "Failed to open the i2c bus" << i2c_filename;
-	    exit(1);
-	}
-
-	std::thread tempThread( readTemperature );
-
-	while( !_stopping ) {
-
-		std::this_thread::sleep_for( std::chrono::seconds(1) );
-	}
-
-	tempThread.join();
-
-	if( _fd > 0 ) close( _fd );
 }

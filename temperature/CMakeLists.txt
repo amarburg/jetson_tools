@@ -14,12 +14,13 @@ set(RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 #endif(CCACHE_FOUND)
 
 
-#list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 # find_package(OpenCV 2.4 COMPONENTS core highgui imgproc calib3d REQUIRED)
 # find_package(Boost COMPONENTS thread filesystem system REQUIRED)
 # find_package(Eigen3 REQUIRED)
-#
-# find_package(TCLAP REQUIRED )
+
+find_package(TCLAP REQUIRED )
+
 # find_package(ZLIB REQUIRED)
 #
 # include( ${PROJECT_SOURCE_DIR}/cmake/BuildG3Log.cmake )

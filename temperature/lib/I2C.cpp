@@ -46,7 +46,7 @@ int set_slave_addr(int file, uint8_t address )
 	return 0;
 }
 
-static inline __s32 i2c_access(int file, char read_write, uint8_t command,
+static inline int32_t i2c_access(int file, char read_write, uint8_t command,
                                        int size, union i2c_smbus_data *data)
   {
       struct i2c_smbus_ioctl_data args;
@@ -83,7 +83,7 @@ uint8_t i2c_write_byte_data(int file, uint8_t command, uint8_t value)
 		I2C_SMBUS_BYTE_DATA, &data);
 }
 
-__s32 i2c_read_word_data(int file, uint8_t command)
+int32_t i2c_read_word_data(int file, uint8_t command)
 {
 	union i2c_smbus_data data;
 	if (i2c_access(file,I2C_SMBUS_READ,command,
@@ -93,7 +93,7 @@ __s32 i2c_read_word_data(int file, uint8_t command)
 	   return 0x0FFFF & data.word;
 }
 
-__s32 i2c_read_i2c_block_data(int file, uint8_t command,
+int32_t i2c_read_i2c_block_data(int file, uint8_t command,
                                                     uint8_t length, uint8_t *values)
 {
 	union i2c_smbus_data data;
