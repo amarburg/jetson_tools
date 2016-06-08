@@ -15,6 +15,7 @@
 
 #include <mutex>
 #include <thread>
+#include <iomanip>
 
 #include <tclap/CmdLine.h>
 
@@ -35,7 +36,8 @@ public:
 	CompanionConfig( int argc, char **argv )
 		: _cmd( "Companion", ' ', "0.1" ),
 			_logFile("o","log-file","",false,"","", _cmd ),
-			_noLights("d","no-lights","", _cmd, false)
+			_noLights("d","no-lights","", _cmd, false),
+			_autoLogFile("a","auto-log","", _cmd, false)
 	{ parseCmdLine( argc, argv ); }
 
 	void parseCmdLine( int argc, char **argv )
@@ -54,11 +56,13 @@ public:
 	bool 				logFileSet( void ) { return _logFile.isSet(); }
 
 	bool				noLights( void ) { return _noLights.getValue(); }
+	bool 				autoLog( void ) { return _autoLogFile.getValue(); }
 protected:
 
 	TCLAP::CmdLine _cmd;
 	TCLAP::ValueArg< string > _logFile;
 	TCLAP::SwitchArg _noLights;
+	TCLAP::SwitchArg _autoLogFile;
 };
 
 void sighandler( int sig )
@@ -76,11 +80,24 @@ int main( int argc, char **argv )
 	std::streambuf * buf;
 	std::ofstream of;
 
-	if( _conf.logFileSet() ) {
-		_logFile.open(_conf.logFile());
+	std::string logFileName( _conf.logFile() );
+
+	if( _conf.autoLog() ) {
+		char filename[80];
+		std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+		std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+
+		strftime( filename, 79, "companion-%Y%m%d%H%M%S.log", localtime( &now_c ) );
+		logFileName = filename;
+
+		cout << "Saving to log file " << logFileName << endl;
+	}
+
+	if( !logFileName.empty() ) {
+		_logFile.open(logFileName);
 
 		if( !_logFile.is_open() ) {
-			cerr << "Couldn't open log file " << _conf.logFile() << endl;
+			cerr << "Couldn't open log file " << logFileName << endl;
 			exit(1);
 		}
 	}
