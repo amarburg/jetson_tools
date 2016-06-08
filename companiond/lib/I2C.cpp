@@ -25,12 +25,12 @@ using namespace std;
 
 #define I2C_SMBUS_BLOCK_MAX 32
 
-union i2c_smbus_data {
-	uint8_t byte;
-	__u16 word;
-	uint8_t block[I2C_SMBUS_BLOCK_MAX + 2]; /* block[0] is used for length */
-	                                            /* and one more for PEC */
-};
+// union i2c_smbus_data {
+// 	uint8_t byte;
+// 	__u16 word;
+// 	uint8_t block[I2C_SMBUS_BLOCK_MAX + 2]; /* block[0] is used for length */
+// 	                                            /* and one more for PEC */
+// };
 
 int set_slave_addr(int file, uint8_t address )
 {
