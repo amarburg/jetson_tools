@@ -100,11 +100,11 @@ void temperatureThread( void )
 
 	// Write a header
 	if( _logFile.is_open() ) {
-		_logFile << " # system_clock,";
+		_logFile << "system_clock";
 		for( auto &zone : zones ) {
 			_logFile << "\t" << zone.name();
 		}
-		_logFile << "bmp280_temp\tbmp280_pressure" << endl;
+		_logFile << "\tbmp280_temp\tbmp280_pressure" << endl;
 	}
 
 
