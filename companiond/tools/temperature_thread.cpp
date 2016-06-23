@@ -10,6 +10,9 @@
 
 #include "Adafruit_BMP280.h"
 
+// NTFS:   udev API documentation is here:
+//         https://www.kernel.org/pub/linux/utils/kernel/hotplug/libudev/
+
 using namespace std;
 
 struct ThermalZoneUdev {
